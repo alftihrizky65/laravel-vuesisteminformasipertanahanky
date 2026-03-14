@@ -17,6 +17,179 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
    
     <style>
+        /* Full Page Loading Screen */
+        .full-loading-screen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+
+        .full-loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .loading-logo-container {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 2rem;
+        }
+
+        .loading-rings {
+            position: absolute;
+            inset: -20px;
+        }
+
+        .loading-ring {
+            position: absolute;
+            inset: 0;
+            border: 3px solid transparent;
+            border-top-color: rgba(255,255,255,0.8);
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+        }
+
+        .loading-ring:nth-child(2) {
+            inset: -10px;
+            border-top-color: rgba(255,255,255,0.5);
+            animation-duration: 2s;
+            animation-direction: reverse;
+        }
+
+        .loading-ring:nth-child(3) {
+            inset: 0;
+            border: 2px solid rgba(255,255,255,0.2);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
+
+        .loading-logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90px;
+            height: 90px;
+            background: white;
+            border-radius: 15px;
+            padding: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+
+        .loading-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+            50% { transform: translate(-50%, -50%) translateY(-10px); }
+        }
+
+        .loading-title {
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+            letter-spacing: 3px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            animation: titleFadeIn 1s ease forwards;
+        }
+
+        .loading-subtitle {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #6ee7b7;
+            letter-spacing: 5px;
+            margin-bottom: 2rem;
+            animation: subtitleFadeIn 1s ease forwards 0.3s;
+            opacity: 0;
+        }
+
+        @keyframes titleFadeIn {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes subtitleFadeIn {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .loading-progress {
+            width: 200px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            margin: 0 auto 1.5rem;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #34d399, #6ee7b7, #34d399);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s ease-in-out infinite;
+            border-radius: 2px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .loading-dots {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .loading-dots span {
+            width: 12px;
+            height: 12px;
+            background: rgba(255,255,255,0.6);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .loading-dots span:nth-child(1) { animation-delay: 0s; }
+        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        .loading-note {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.6);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -475,16 +648,223 @@
             .legend-group { margin-top:8px }
             .legend-group-header { font-weight:700; font-size:13px; color:#0f172a; margin:8px 0 6px }
 
-            /* center zoom control vertically on right */
+        /* center zoom control vertically on right */
             .leaflet-top.leaflet-right { top: 50% !important; transform: translateY(-50%); }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            pointer-events: none;
+        }
+        .toast {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            min-width: 300px;
+            max-width: 500px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateX(400px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            pointer-events: auto;
+            border-left: 4px solid;
+        }
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .toast.success {
+            border-left-color: #10b981;
+        }
+        .toast.success .toast-icon {
+            color: #10b981;
+        }
+        .toast.error {
+            border-left-color: #ef4444;
+        }
+        .toast.error .toast-icon {
+            color: #ef4444;
+        }
+        .toast.warning {
+            border-left-color: #f59e0b;
+        }
+        .toast.warning .toast-icon {
+            color: #f59e0b;
+        }
+        .toast.info {
+            border-left-color: #3b82f6;
+        }
+        .toast.info .toast-icon {
+            color: #3b82f6;
+        }
+        .toast-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        .toast-content {
+            flex: 1;
+        }
+        .toast-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: #1e293b;
+        }
+        .toast-message {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+        .toast-close {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .toast-close:hover {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        /* Confirmation Modal */
+        .confirm-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .confirm-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .confirm-modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.3s ease;
+        }
+        .confirm-modal.show .confirm-modal-content {
+            transform: scale(1) translateY(0);
+        }
+        .confirm-icon {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .confirm-icon i {
+            font-size: 48px;
+            color: #f59e0b;
+        }
+        .confirm-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e293b;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .confirm-message {
+            font-size: 14px;
+            color: #64748b;
+            text-align: center;
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+        .confirm-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        .confirm-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 100px;
+        }
+        .confirm-btn.cancel {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+        .confirm-btn.cancel:hover {
+            background: #e2e8f0;
+            color: #475569;
+        }
+        .confirm-btn.confirm {
+            background: #ef4444;
+            color: white;
+        }
+        .confirm-btn.confirm:hover {
+            background: #dc2626;
+        }
     </style>
 </head>
 <body>
+    <!-- Full Page Loading Screen -->
+    <div class="full-loading-screen" id="fullLoadingScreen">
+        <div class="loading-content">
+            <div class="loading-logo-container">
+                <div class="loading-rings">
+                    <div class="loading-ring"></div>
+                    <div class="loading-ring"></div>
+                    <div class="loading-ring"></div>
+                </div>
+                <div class="loading-logo">
+                    <img src="{{ asset('sbadmin/img/Logo_BPN-KemenATR_(2017).png') }}" alt="Logo ATR/BPN">
+                </div>
+            </div>
+            <h1 class="loading-title">MAPS INTERAKTIF NASIONAL</h1>
+            <p class="loading-subtitle">PERTANAHAN BANGSA!</p>
+            <div class="loading-progress">
+                <div class="progress-bar"></div>
+            </div>
+            <div class="loading-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <p class="loading-note">Kementrian Agraria dan Tata Ruang / BPN</p>
+        </div>
+    </div>
     <!-- Map -->
     <div id="map"></div>
 
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toast-container"></div>
+
     <!-- Back Button -->
-    <button class="back-btn" onclick="window.location.href='/'">
+    <button id="backBtn" class="back-btn">
         <i class="fas fa-arrow-left"></i> Kembali
     </button>
 
@@ -620,6 +1000,24 @@
     <!-- Loading -->
     <div class="loading-overlay" id="loading">
         <div class="spinner"></div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="confirm-modal" id="confirm-modal">
+        <div class="confirm-modal-content">
+            <div class="confirm-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="confirm-title">Konfirmasi Hapus</div>
+            <div class="confirm-message">
+                Apakah Anda yakin ingin menghapus polygon ini?<br><br>
+                <strong>Data yang dihapus tidak dapat dikembalikan!</strong>
+            </div>
+            <div class="confirm-buttons">
+                <button class="confirm-btn cancel" onclick="closeConfirmModal()">Batal</button>
+                <button class="confirm-btn confirm" onclick="confirmDelete()">Hapus</button>
+            </div>
+        </div>
     </div>
 
         <!-- Map Legend (overlay) -->
@@ -1078,19 +1476,19 @@
             
             // VALIDASI
             if (!coords) {
-                alert('⚠️ Gambar polygon dulu di peta!');
+                showToast('warning', 'Peringatan', 'Gambar polygon dulu di peta!');
                 return;
             }
             if (!pendudukId) {
-                alert('⚠️ Pilih penduduk terlebih dahulu!');
+                showToast('warning', 'Peringatan', 'Pilih penduduk terlebih dahulu!');
                 return;
             }
             if (!nama) {
-                alert('⚠️ Nama pemilik belum terisi! Pilih penduduk dulu.');
+                showToast('warning', 'Peringatan', 'Nama pemilik belum terisi! Pilih penduduk dulu.');
                 return;
             }
             if (!luasAuto || parseFloat(luasAuto) <= 0) {
-                alert('⚠️ Luas otomatis belum terisi! Gambar polygon dulu.');
+                showToast('warning', 'Peringatan', 'Luas otomatis belum terisi! Gambar polygon dulu.');
                 return;
             }
 
@@ -1200,12 +1598,12 @@
                     console.log('='.repeat(60));
                     
                     const luasDetailText = payload.luas_detail ? `\nLuas Detail: ${payload.luas_detail} m² (manual)` : '';
-                    const successMsg = `✅ BERHASIL ${id ? 'UPDATE' : 'SIMPAN'}!\n\n` +
+                    const successMsg = `BERHASIL ${id ? 'UPDATE' : 'SIMPAN'}!\n\n` +
                         `Keperluan: ${keperluan}\n` +
                         `Luas Otomatis: ${payload.luas} m²${luasDetailText}\n` +
                         `Kategori: ${keterangan}`;
-                    
-                    alert(successMsg);
+
+                    showToast('success', 'Berhasil!', successMsg);
                     
                     hideForm();
                     await loadPolygon();
@@ -1234,13 +1632,13 @@
                         errorMsg += '\n\nResponse: ' + errorText.substring(0, 300);
                     }
                     
-                    alert('❌ ' + errorMsg);
+                    showToast('error', 'Gagal Menyimpan', errorMsg);
                 }
 
             } catch (err) { 
                 console.error('💥 FATAL ERROR:', err);
                 console.log('='.repeat(60));
-                alert('⚠️ Error koneksi ke server!\n\nDetail: ' + err.message + '\n\nCek console untuk info lengkap.');
+                showToast('error', 'Error Koneksi', 'Error koneksi ke server!\n\nDetail: ' + err.message + '\n\nCek console untuk info lengkap.');
             } finally { 
                 showLoading(false); 
             }
@@ -1344,13 +1742,15 @@
     }
 
     async function deletePolygon(id) {
-        if (!confirm('⚠️ Yakin hapus polygon ini?\n\nData yang dihapus tidak bisa dikembalikan!')) return;
-        
+        showConfirmModal(id);
+    }
+
+    async function performDelete(id) {
         console.log('🗑️ Menghapus polygon ID:', id);
-        
+
         try {
             showLoading(true);
-            
+
             const response = await fetch(`/polygon/polygon/${id}`, {
                 method: 'DELETE',
                 headers: {
@@ -1363,16 +1763,16 @@
 
             if (response.ok) {
                 console.log('✅ Delete berhasil!');
-                alert('✅ Polygon berhasil dihapus dari database!');
+                showToast('success', 'Berhasil Dihapus', 'Polygon berhasil dihapus dari database!');
                 await loadPolygon();
             } else {
                 const errorText = await response.text();
                 console.error('❌ Delete gagal:', errorText);
-                alert('❌ Gagal menghapus polygon\n\n' + errorText.substring(0, 200));
+                showToast('error', 'Gagal Menghapus', 'Gagal menghapus polygon\n\n' + errorText.substring(0, 200));
             }
         } catch (err) {
             console.error('💥 Delete error:', err);
-            alert('⚠️ Error: ' + err.message);
+            showToast('error', 'Error', 'Error: ' + err.message);
         } finally {
             showLoading(false);
         }
@@ -1592,10 +1992,10 @@
 
         btn.addEventListener('click', async () => {
             const q = input.value.trim();
-            if (!q) return alert('Masukkan kata kunci pencarian terlebih dahulu');
+            if (!q) return showToast('warning', 'Peringatan', 'Masukkan kata kunci pencarian terlebih dahulu');
             const res = await geocodeQuery(q);
             currentResults = res;
-            if (!res || res.length === 0) return alert('Lokasi tidak ditemukan');
+            if (!res || res.length === 0) return showToast('info', 'Tidak Ditemukan', 'Lokasi tidak ditemukan');
             chooseResult(res[0]);
             renderMapSearchResults(res);
         });
@@ -1750,7 +2150,7 @@
             displayNearbyPlaces(data.elements, type);
         } catch (error) {
             console.error('Error fetching nearby places:', error);
-            alert('Gagal memuat tempat terdekat. Coba lagi nanti.');
+            showToast('error', 'Gagal Memuat', 'Gagal memuat tempat terdekat. Coba lagi nanti.');
         }
     }
 
@@ -1799,11 +2199,152 @@
         return labels[type] || type;
     }
 
+    // Toast Notification System
+    function showToast(type, title, message) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+
+        const icons = {
+            success: 'fas fa-check-circle',
+            error: 'fas fa-exclamation-circle',
+            warning: 'fas fa-exclamation-triangle',
+            info: 'fas fa-info-circle'
+        };
+
+        toast.innerHTML = `
+            <div class="toast-icon">
+                <i class="${icons[type] || icons.info}"></i>
+            </div>
+            <div class="toast-content">
+                <div class="toast-title">${title}</div>
+                <div class="toast-message">${message.replace(/\n/g, '<br>')}</div>
+            </div>
+            <button class="toast-close" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+
+        container.appendChild(toast);
+
+        // Trigger animation
+        setTimeout(() => toast.classList.add('show'), 10);
+
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }
+        }, 5000);
+    }
+
+    // Confirmation Modal System
+    let pendingDeleteId = null;
+
+    function showConfirmModal(id) {
+        pendingDeleteId = id;
+        const modal = document.getElementById('confirm-modal');
+        if (modal) {
+            modal.classList.add('show');
+        }
+    }
+
+    function closeConfirmModal() {
+        const modal = document.getElementById('confirm-modal');
+        if (modal) {
+            modal.classList.remove('show');
+        }
+        pendingDeleteId = null;
+    }
+
+    async function confirmDelete() {
+        if (!pendingDeleteId) return;
+
+        console.log('🗑️ Menghapus polygon ID:', pendingDeleteId);
+
+        try {
+            showLoading(true);
+
+            const response = await fetch(`/polygon/polygon/${pendingDeleteId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (response.ok) {
+                console.log('✅ Delete berhasil!');
+                showToast('success', 'Berhasil Dihapus', 'Polygon berhasil dihapus dari database!');
+                await loadPolygon();
+            } else {
+                const errorText = await response.text();
+                console.error('❌ Delete gagal:', errorText);
+                showToast('error', 'Gagal Menghapus', 'Gagal menghapus polygon\n\n' + errorText.substring(0, 200));
+            }
+        } catch (err) {
+            console.error('💥 Delete error:', err);
+            showToast('error', 'Error', 'Error: ' + err.message);
+        } finally {
+            showLoading(false);
+            closeConfirmModal();
+        }
+    }
+
     // Expose functions to global scope so inline onclick handlers can find them reliably
     window.showForm = showForm;
     window.hideForm = hideForm;
     window.startDrawing = startDrawing;
     window.stopDrawing = stopDrawing;
+    window.showToast = showToast;
+    window.closeConfirmModal = closeConfirmModal;
+    window.confirmDelete = confirmDelete;
 </script>
+<script>
+  (function() {
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) {
+      backBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const dashboardUrl = "{{ url('/dashboard') }}";
+        try {
+          if (window.opener && !window.opener.closed) {
+            // request opener to navigate/focus, then close this tab
+            window.opener.postMessage({type:'navigate', url: dashboardUrl}, window.location.origin);
+            window.close();
+            // fallback if window.close was blocked
+            setTimeout(function() {
+              try { window.close(); } catch (_) { window.location.href = dashboardUrl; }
+            }, 300);
+          } else {
+            window.location.href = dashboardUrl;
+          }
+        } catch (err) {
+          window.location.href = dashboardUrl;
+        }
+      });
+    }
+  })();
+</script>
+    
+    <!-- Hide Full Loading Screen on Page Load -->
+    <script>
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                var fullLoadingScreen = document.getElementById('fullLoadingScreen');
+                if (fullLoadingScreen) {
+                    fullLoadingScreen.classList.add('hidden');
+                    setTimeout(function() {
+                        fullLoadingScreen.style.display = 'none';
+                    }, 800);
+                }
+            }, 2000); // Show loading for 2 seconds
+        });
+    </script>
 </body>
 </html>

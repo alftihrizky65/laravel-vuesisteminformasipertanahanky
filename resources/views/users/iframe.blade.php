@@ -255,6 +255,14 @@
                                     Kirim Undangan
                                 </button>
                             </div>
+
+                            <!-- Hidden form for invite functionality -->
+                            <form id="invite-form" action="/users/invite/form" method="POST" style="display: none;">
+                                @csrf
+                                <input type="hidden" name="name" id="invite-name">
+                                <input type="hidden" name="email" id="invite-email">
+                                <input type="hidden" name="role" id="invite-role">
+                            </form>
                             <p class="text-xs text-gray-400 mt-4 flex items-start gap-2">
                                 <i class="fas fa-info-circle mt-0.5"></i>
                                 Jika password dikosongkan, sistem akan mengirim undangan via email (Mailtrap pada lingkungan dev).
@@ -277,6 +285,20 @@
     </div>
 
     <script>
+        // Toast Notification CSS & Function
+        (function(){
+            const s=document.createElement('style');s.textContent=`
+                .toast-popup{position:fixed;top:20px;right:20px;padding:16px 24px;border-radius:12px;color:#fff;font-weight:500;z-index:9999;animation:slideIn .3s ease,fadeOut .3s ease 2.7s;box-shadow:0 10px 40px rgba(0,0,0,.3);max-width:350px}
+                .toast-popup.success{background:linear-gradient(135deg,#10b981,#059669)}.toast-popup.error{background:linear-gradient(135deg,#ef4444,#dc2626)}.toast-popup.warning{background:linear-gradient(135deg,#f59e0b,#d97706)}.toast-popup.info{background:linear-gradient(135deg,#3b82f6,#2563eb)}
+                @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}@keyframes fadeOut{from{opacity:1}to{opacity:0}}
+                .toast-popup .tc{position:absolute;top:8px;right:12px;background:0;border:0;color:#fff;cursor:pointer;font-size:18px}
+            `;document.head.appendChild(s);
+            window.showToast=function(m,t='success'){
+                const d=document.createElement('div');d.className='toast-popup '+t;d.innerHTML='<span>'+m+'</span><button class=tc onclick=this.parentElement.remove()>&times;</button>';
+                document.body.appendChild(d);setTimeout(()=>d.remove(),3000);
+            };
+        })();
+
         document.addEventListener('DOMContentLoaded', ()=>{
             async function fetchUsers(){
                 try{
@@ -301,15 +323,15 @@
                         const txt = await res.text();
                         throw new Error('Gagal: '+res.status+' '+txt);
                     }
-                    alert(editingId ? 'Pengguna diupdate.' : 'Pengguna dibuat (email undangan dikirim jika ada).');
+                    showToast(editingId ? 'Pengguna berhasil diperbarui!' : 'Pengguna berhasil dibuat!', 'success');
                     editingId = null; resetForm(); fetchUsers();
-                }catch(err){ alert('Error: '+err.message); }
+                }catch(err){ showToast('Error: '+err.message, 'error'); }
             });
 
             window.editUser = function(id){
                 fetch('/users/list',{headers:{'Accept':'application/json'}}).then(r=>r.json()).then(list=>{
                     const u = list.find(x=>x.id==id);
-                    if(!u) return alert('User tidak ditemukan');
+                    if(!u) return showToast('User tidak ditemukan', 'error');
                     document.getElementById('name').value = u.name || '';
                     document.getElementById('email').value = u.email || '';
                     document.getElementById('role').value = (u.roles && u.roles[0]) || 'user';
@@ -334,21 +356,26 @@
                 try{
                     const res = await fetch('/users/' + id, { method: 'DELETE', headers: {'X-CSRF-TOKEN': getCsrfToken() } });
                     if(!res.ok) throw new Error('Gagal: '+res.status);
-                    alert('User dihapus'); fetchUsers();
-                }catch(e){ alert('Error: '+e.message); }
+                    showToast('User berhasil dihapus!', 'success'); fetchUsers();
+                }catch(e){ showToast('Error: '+e.message, 'error'); }
             }
 
             document.getElementById('btn-invite').addEventListener('click', async function(){
                 const email = document.getElementById('email').value;
                 const name = document.getElementById('name').value;
                 const role = document.getElementById('role').value;
-                if(!email) return alert('Masukkan email untuk undangan');
+                if(!email) return showToast('Masukkan email untuk undangan', 'warning');
+
                 try{
-                    const res = await fetch('/users/invite', { method:'POST', headers: {'Content-Type':'application/json','X-CSRF-TOKEN': getCsrfToken() }, body: JSON.stringify({ email, name, role }) });
+                    const res = await fetch('/users/invite/form', {
+                        method:'POST',
+                        headers: {'Content-Type':'application/x-www-form-urlencoded','X-CSRF-TOKEN': getCsrfToken() },
+                        body: new URLSearchParams({ name, email, role })
+                    });
                     if(!res.ok) throw new Error('HTTP '+res.status);
-                    alert('Undangan dikirim (cek Mailtrap).');
-                    fetchUsers();
-                }catch(e){ alert('Gagal kirim undangan: '+e.message); }
+                    // Redirect to the success page or handle response
+                    window.location.href = res.url || '/dashboard';
+                }catch(e){ showToast('Gagal kirim undangan: '+e.message, 'error'); }
             });
 
             function getCsrfToken(){

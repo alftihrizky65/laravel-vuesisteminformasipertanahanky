@@ -8,7 +8,12 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // Register artisan commands
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \App\Console\Commands\FeedbackResend::class,
+            ]);
+        }
     }
 
     public function boot(): void

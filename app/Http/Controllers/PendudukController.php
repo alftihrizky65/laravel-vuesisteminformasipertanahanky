@@ -11,9 +11,17 @@ class PendudukController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $penduduk = Penduduk::orderBy('created_at', 'desc')->get();
+        $query = Penduduk::query();
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where('nik', 'like', '%' . $search . '%')
+                  ->orWhere('nama', 'like', '%' . $search . '%');
+        }
+
+        $penduduk = $query->orderBy('created_at', 'desc')->get();
         return response()->json($penduduk);
     }
 
@@ -113,8 +121,8 @@ class PendudukController extends Controller
         $validator = Validator::make($request->all(), [
             'nik' => 'required|string|size:16|unique:penduduk,nik,' . $id,
             'nama' => 'required|string|max:100',
-            'tanggal_lahir' => 'required|date|before:today',
-            'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
+            'tanggal_lahir' => 'nullable|date',
+            'jenis_kelamin' => 'nullable|in:Laki-laki,Perempuan',
             'alamat' => 'required|string',
             'rt' => 'nullable|string|max:3',
             'rw' => 'nullable|string|max:3',
@@ -124,7 +132,7 @@ class PendudukController extends Controller
             'provinsi' => 'nullable|string|max:100',
             'telepon' => 'nullable|string|max:15',
             'email' => 'nullable|email|max:100',
-            'status_perkawinan' => 'required|in:Belum Kawin,Kawin,Cerai Hidup,Cerai Mati',
+            'status_perkawinan' => 'nullable|in:Belum Kawin,Kawin,Cerai Hidup,Cerai Mati',
             'pekerjaan' => 'nullable|string|max:100',
             'agama' => 'nullable|string|max:50',
             'latitude' => 'nullable|numeric|between:-90,90',
@@ -134,11 +142,7 @@ class PendudukController extends Controller
             'nik.size' => 'NIK harus 16 digit',
             'nik.unique' => 'NIK sudah terdaftar',
             'nama.required' => 'Nama wajib diisi',
-            'tanggal_lahir.required' => 'Tanggal lahir wajib diisi',
-            'tanggal_lahir.before' => 'Tanggal lahir harus sebelum hari ini',
-            'jenis_kelamin.required' => 'Jenis kelamin wajib diisi',
             'alamat.required' => 'Alamat wajib diisi',
-            'status_perkawinan.required' => 'Status perkawinan wajib diisi',
             'latitude.numeric' => 'Latitude harus berupa angka',
             'latitude.between' => 'Latitude harus antara -90 sampai 90',
             'longitude.numeric' => 'Longitude harus berupa angka',
@@ -181,6 +185,35 @@ class PendudukController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Data penduduk berhasil dihapus'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Remove multiple resources from storage.
+     */
+    public function bulkDestroy(Request $request)
+    {
+        try {
+            $ids = $request->input('ids');
+            
+            if (!is_array($ids) || empty($ids)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada data yang dipilih'
+                ], 422);
+            }
+
+            $count = Penduduk::whereIn('id', $ids)->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => "{$count} data berhasil dihapus"
             ]);
         } catch (\Exception $e) {
             return response()->json([

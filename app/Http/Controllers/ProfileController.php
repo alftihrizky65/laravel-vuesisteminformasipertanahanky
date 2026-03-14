@@ -21,6 +21,7 @@ class ProfileController extends Controller
             'email'    => 'required|email|unique:users,email,'.auth()->id(),
             'language_preference' => 'nullable|in:id,en',
             'current_password'    => 'nullable|required_with:password|current_password',
+            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $user = Auth::user();
@@ -31,12 +32,23 @@ class ProfileController extends Controller
             $user->language_preference = $request->language_preference;
         }
 
+        // Handle profile photo upload
+        if ($request->hasFile('profile_photo')) {
+            // Hapus foto lama kalau bukan default
+            if ($user->profile_photo_path && $user->profile_photo_path !== 'profile-photos/default.jpg') {
+                \Storage::disk('public')->delete($user->profile_photo_path);
+            }
+
+            $path = $request->file('profile_photo')->store('profile-photos', 'public');
+            $user->profile_photo_path = $path;
+        }
+
         $user->save();
 
         return response()->json([
             'success' => true,
             'message' => 'Profil berhasil diperbarui!',
-            'profile_photo_url' => $user->profile_photo_url
+            'profile_photo_url' => $user->profile_photo_url . '?' . time()
         ]);
     }
 
@@ -62,6 +74,32 @@ class ProfileController extends Controller
         return response()->json([
             'success' => true,
             'profile_photo_url' => $user->profile_photo_url . '?' . time() // biar langsung refresh cache
+        ]);
+    }
+
+    // Update Password
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|min:6|confirmed',
+        ]);
+
+        $user = Auth::user();
+
+        if (!\Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password saat ini salah!'
+            ], 422);
+        }
+
+        $user->password = \Hash::make($request->password);
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password berhasil diubah!'
         ]);
     }
 }

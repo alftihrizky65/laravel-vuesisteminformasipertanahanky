@@ -38,14 +38,18 @@ class PengaturanController extends Controller
     {
         $request->validate(['lang' => 'required|in:id,en']);
         $user = Auth::user();
-        // Store language preference in database (add a language column to users table if not exists)
-        // For now, store in session and eventually migrate to user model
+
+        // Store in session
         session(['app_lang' => $request->lang]);
-        // Try to save to user model if column exists (optional, for future enhancement)
-        if (Schema::hasColumn('users', 'language_preference')) {
-            $user->update(['language_preference' => $request->lang]);
-        }
+
+        // Save to database (always, since column exists)
+        $user->update(['language_preference' => $request->lang]);
+
         app()->setLocale($request->lang);
-        return response()->json(['ok' => true, 'lang' => $request->lang]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Bahasa berhasil diubah!'
+        ]);
     }
 }

@@ -35,12 +35,12 @@
         <nav class="nav flex-column">
             <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
             <a href="{{ url('/petnah') }}" class="nav-link {{ request()->is('petnah') ? 'active' : '' }}">Peta Pertanahan</a>
-            <a href="{{ route('data-tanah.preview') }}" class="nav-link {{ request()->routeIs('data-tanah.preview') ? 'active' : '' }}">Data Tanah</a>
-            <a href="{{ route('laporan.preview') }}" class="nav-link {{ request()->routeIs('laporan.preview') ? 'active' : '' }}">Laporan</a>
+            <a href="{{ route('data-tanah.index') }}" class="nav-link {{ request()->routeIs('data-tanah.index') ? 'active' : '' }}">Data Tanah</a>
+            <a href="{{ route('laporan.index') }}" class="nav-link {{ request()->routeIs('laporan.index') ? 'active' : '' }}">Laporan</a>
             @if(auth()->user()->hasRole('admin'))
                 <a href="{{ route('users.preview') }}" class="nav-link {{ request()->routeIs('users.preview') ? 'active' : '' }}">User Management</a>
             @endif
-            <a href="{{ route('pengaturan.preview') }}" class="nav-link {{ request()->routeIs('pengaturan.preview') ? 'active' : '' }}">Pengaturan</a>
+            <a href="{{ route('profile.edit') }}" class="nav-link {{ request()->routeIs('profile.edit') ? 'active' : '' }}">Pengaturan</a>
             <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display:none;">@csrf</form>
             <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="nav-link">Logout</a>
         </nav>

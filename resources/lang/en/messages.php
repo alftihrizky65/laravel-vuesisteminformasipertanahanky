@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'dashboard' => 'Dashboard',
+    'settings' => 'Settings',
+    'profile' => 'Profile',
+    'logout' => 'Logout',
+    'welcome' => 'Welcome',
+    'save_changes' => 'Save Changes',
+    'change_language' => 'Change Language',
+    'edit_profile' => 'Edit Profile',
+    'change_password' => 'Change Password',
+    'current_password' => 'Current Password',
+    'new_password' => 'New Password',
+    'confirm_password' => 'Confirm Password',
+    'profile_updated' => 'Profile updated successfully!',
+    'password_changed' => 'Password changed successfully!',
+    'language_changed' => 'Language changed successfully',
+    'success' => 'Success!',
+    'error' => 'Error!',
+    'name' => 'Name',
+    'email' => 'Email',
+    'language' => 'Language',
+    'indonesian' => 'Indonesian',
+    'english' => 'English',
+];

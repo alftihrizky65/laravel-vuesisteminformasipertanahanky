@@ -17,6 +17,7 @@ Route::post('/penduduk', [\App\Http\Controllers\PendudukController::class, 'stor
 Route::get('/penduduk/{id}', [\App\Http\Controllers\PendudukController::class, 'show']);
 Route::put('/penduduk/{id}', [\App\Http\Controllers\PendudukController::class, 'update']);
 Route::delete('/penduduk/{id}', [\App\Http\Controllers\PendudukController::class, 'destroy']);
+Route::post('/penduduk/bulk-delete', [\App\Http\Controllers\PendudukController::class, 'bulkDestroy']);
 });
 
 // Polygon Routes

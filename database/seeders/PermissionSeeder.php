@@ -12,16 +12,21 @@ class PermissionSeeder extends Seeder
     {
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        Permission::create(['name' => 'manage users']);
-        Permission::create(['name' => 'edit posts']);
-        Permission::create(['name' => 'delete posts']);
-        Permission::create(['name' => 'create posts']);
-        Permission::create(['name' => 'view posts']);
+        // Create permissions
+        Permission::firstOrCreate(['name' => 'manage users']);
+        Permission::firstOrCreate(['name' => 'manage penduduk']);
+        Permission::firstOrCreate(['name' => 'manage tanah']);
+        Permission::firstOrCreate(['name' => 'view reports']);
+        Permission::firstOrCreate(['name' => 'manage system']);
 
-        $admin = Role::create(['name' => 'admin']);
+        // Create roles
+        $user = Role::firstOrCreate(['name' => 'user']);
+        $user->givePermissionTo(['view reports']);
+
+        $staff = Role::firstOrCreate(['name' => 'staff']);
+        $staff->givePermissionTo(['manage penduduk', 'manage tanah', 'view reports']);
+
+        $admin = Role::firstOrCreate(['name' => 'admin']);
         $admin->givePermissionTo(Permission::all());
-
-        $editor = Role::create(['name' => 'editor']);
-        $editor->givePermissionTo(['edit posts', 'delete posts', 'create posts', 'view posts']);
     }
 }

@@ -1,73 +1,37 @@
-# Settings Page Implementation - COMPLETED ✅
+# TODO - Enhanced Magic Link Verification
 
-## ✅ Completed Tasks
+## Completed Tasks
+- [x] Create magic link verification popup modal
+- [x] Add form fields: name, address, location, camera photo
+- [x] Implement geolocation API integration
+- [x] Implement camera API with auto-capture after 3 seconds
+- [x] Add form validation (all fields required)
+- [x] Modify handleMagicLink to show popup instead of direct login
+- [x] Add verifyMagicLinkForm method to handle form submission
+- [x] Add route for form verification
+- [x] Add kickout mechanism for failed verification (10-second redirect to forgot-password)
+- [x] Update login page with kickout countdown script
+- [x] Include popup in forgot-password view
+- [x] Add warning modal before final confirmation
+- [x] Warning modal shows legal consequences and monitoring notice
 
-### 1. User Model Update
-- Added 'language_preference' to fillable attributes in User model
+## Testing Checklist
+- [ ] Test magic link generation and display after code verification
+- [ ] Test popup display when clicking magic link
+- [ ] Test geolocation permission and capture
+- [ ] Test camera permission and auto-capture
+- [ ] Test form validation (submit disabled until all fields filled)
+- [ ] Test warning modal appears on submit button click
+- [ ] Test successful verification and login after accepting warning
+- [ ] Test failed verification (incomplete form) redirects to login with 10-second countdown back to forgot-password page
+- [ ] Test 10-second countdown and redirect to forgot-password
+- [ ] Test browser compatibility (geolocation and camera APIs)
 
-### 2. Settings Page Integration into Dashboard
-- **REMOVED** separate `pengaturan.blade.php` page
-- **INTEGRATED** settings functionality directly into `dashboard.blade.php` as a tabbed section
-- Updated sidebar menu to use `onclick="showPage('pengaturan')"` instead of external link
-- Added complete settings UI with profile editing, password change, and language preferences
-
-### 3. Route Updates
-- Removed separate `/pengaturan` route (no longer needed)
-- Kept AJAX routes for profile/password/language updates:
-  - `POST /pengaturan/profile`
-  - `POST /pengaturan/password`
-  - `POST /pengaturan/lang`
-
-### 4. Dashboard Integration
-- Settings menu now shows/hides the settings section within dashboard
-- Dashboard already shows user name (user-aware)
-- User management features restricted to admin only
-
-## ✅ Features Implemented
-
-- **Profile Management**: Edit name and email with current password confirmation
-- **Password Change**: Secure password update with confirmation
-- **Language Settings**: Switch between Indonesian and English (persisted in session and database)
-- **Account Info**: Display role, approval status, and registration date
-- **Theme Consistency**: Matches dashboard SB Admin 2 styling
-- **Responsive Design**: Works on all screen sizes
-- **AJAX Functionality**: Smooth user experience without page reloads
-- **Security**: CSRF protection, input validation, proper authentication
-
-## ✅ User Access Control
-- Dashboard shows user name (user-aware)
-- User management features only visible/accessible to admin users
-- Role-based access control already implemented in routes and views
-
-## 🧪 TESTING INSTRUCTIONS
-
-To test the implementation:
-
-1. **Start Laravel Server**:
-   ```bash
-   php artisan serve --host=127.0.0.1 --port=8000
-   ```
-
-2. **Access Dashboard**: Go to `http://127.0.0.1:8000/` and login
-
-3. **Test Settings Tab**:
-   - Click "Pengaturan" in the sidebar
-   - Verify the settings page loads within the dashboard (not as separate page)
-
-4. **Test Profile Update**:
-   - Try changing name/email with current password
-   - Should show success message and update sidebar name
-
-5. **Test Password Change**:
-   - Try changing password with confirmation
-   - Should show success message
-
-6. **Test Language Switch**:
-   - Change language selection and click "Ubah Bahasa"
-   - Page should reload with new language preference saved
-
-7. **Test Error Handling**:
-   - Try invalid inputs (wrong password, mismatched confirmation)
-   - Should show appropriate error messages
-
-The settings page is now fully integrated into the dashboard system as a tabbed interface!
+## Notes
+- Photo is captured as base64 data URL and stored in hidden input
+- Location uses navigator.geolocation with high accuracy
+- Camera auto-captures after 3 seconds of opening
+- All fields must be filled for submit button to enable
+- Warning modal shows before final submission with legal consequences
+- Kickout sets session flag and redirects to /login with error message
+- Login page checks for kickout session and shows countdown overlay

@@ -2,86 +2,53 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\InviteUserMail;
-use App\Mail\AccountApprovedMail;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use App\Models\User;
 
 class UserManagementController extends Controller
 {
-    public function list(Request $request)
+    public function list()
     {
-        try {
-            $query = User::with('roles');
-
-            // Search functionality
-            if ($request->has('search') && !empty($request->search)) {
-                $search = $request->search;
-                $query->where(function($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%");
-                });
-            }
-
-            // Filter by role
-            if ($request->has('role') && !empty($request->role)) {
-                $query->whereHas('roles', function($q) use ($request) {
-                    $q->where('name', $request->role);
-                });
-            }
-
-            // Filter by approval status
-            if ($request->has('approved')) {
-                if ($request->approved === '1') {
-                    $query->where('is_approved', true);
-                } elseif ($request->approved === '0') {
-                    $query->where('is_approved', false);
-                }
-            }
-
-            $users = $query->orderBy('created_at', 'desc')
-                          ->paginate($request->get('per_page', 10));
-
-            return response()->json([
-                'users' => $users->items(),
-                'pagination' => [
-                    'current_page' => $users->currentPage(),
-                    'last_page' => $users->lastPage(),
-                    'per_page' => $users->perPage(),
-                    'total' => $users->total(),
-                ]
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to load users'], 500);
+        if (!auth()->check() || !auth()->user()->hasRole(['admin', 'staff'])) {
+            abort(403, 'Akses ditolak');
         }
+
+        $users = User::with('roles')->get()->map(function ($user) {
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'roles' => $user->getRoleNames()->toArray(),
+                'is_approved' => $user->is_approved,
+                'language_preference' => $user->language_preference,
+                'created_at' => $user->created_at,
+            ];
+        });
+
+        return response()->json($users);
     }
 
     public function show($id)
     {
-        try {
-            $user = User::with('roles')->findOrFail($id);
-            return response()->json($user);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'User not found'], 404);
-        }
+        $user = User::with('roles')->findOrFail($id);
+        return response()->json($user);
     }
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
             'role' => 'required|in:user,staff,admin',
-            'password' => 'nullable|string|min:8|confirmed',
+            'language_preference' => 'nullable|in:id,en',
+            'is_approved' => 'nullable|boolean',
+            'registration_reason' => 'nullable|string',
         ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
 
         try {
             DB::beginTransaction();
@@ -89,9 +56,11 @@ class UserManagementController extends Controller
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
-                'password' => $request->password ? Hash::make($request->password) : null,
-                'email_verified_at' => $request->password ? now() : null,
-                'is_approved' => $request->password ? true : false,
+                'password' => Hash::make($request->password),
+                'language_preference' => $request->language_preference ?? 'id',
+                'is_approved' => $request->is_approved ?? true,
+                'registration_reason' => $request->registration_reason,
+                'email_verified_at' => now(),
             ]);
 
             $user->assignRole($request->role);
@@ -99,12 +68,13 @@ class UserManagementController extends Controller
             DB::commit();
 
             return response()->json([
-                'message' => 'User created successfully',
-                'user' => $user->load('roles')
-            ], 201);
+                'message' => 'User berhasil dibuat!',
+                'user' => $user
+            ]);
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['error' => 'Failed to create user'], 500);
+            return response()->json(['message' => 'Gagal membuat user: ' . $e->getMessage()], 500);
         }
     }
 
@@ -112,16 +82,15 @@ class UserManagementController extends Controller
     {
         $user = User::findOrFail($id);
 
-        $validator = Validator::make($request->all(), [
+        $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
+            'password' => 'nullable|string|min:6',
             'role' => 'required|in:user,staff,admin',
-            'password' => 'nullable|string|min:8|confirmed',
+            'language_preference' => 'nullable|in:id,en',
+            'is_approved' => 'nullable|boolean',
+            'registration_reason' => 'nullable|string',
         ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
 
         try {
             DB::beginTransaction();
@@ -129,14 +98,13 @@ class UserManagementController extends Controller
             $user->update([
                 'name' => $request->name,
                 'email' => $request->email,
+                'language_preference' => $request->language_preference ?? 'id',
+                'is_approved' => $request->is_approved ?? true,
+                'registration_reason' => $request->registration_reason,
             ]);
 
             if ($request->password) {
-                $user->update([
-                    'password' => Hash::make($request->password),
-                    'email_verified_at' => now(),
-                    'is_approved' => true,
-                ]);
+                $user->update(['password' => Hash::make($request->password)]);
             }
 
             $user->syncRoles([$request->role]);
@@ -144,98 +112,83 @@ class UserManagementController extends Controller
             DB::commit();
 
             return response()->json([
-                'message' => 'User updated successfully',
-                'user' => $user->load('roles')
+                'message' => 'User berhasil diupdate!',
+                'user' => $user
             ]);
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['error' => 'Failed to update user'], 500);
+            return response()->json(['message' => 'Gagal update user: ' . $e->getMessage()], 500);
         }
     }
 
     public function destroy($id)
     {
-        try {
-            $user = User::findOrFail($id);
+        $user = User::findOrFail($id);
 
-            // Prevent deleting self
-            if ($user->id === auth()->id()) {
-                return response()->json(['error' => 'Cannot delete your own account'], 403);
-            }
-
-            $user->delete();
-
-            return response()->json(['message' => 'User deleted successfully']);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to delete user'], 500);
+        if ($user->id === auth()->id()) {
+            return response()->json(['message' => 'Tidak bisa menghapus akun sendiri'], 400);
         }
+
+        $user->delete();
+
+        return response()->json(['message' => 'User berhasil dihapus!']);
     }
 
     public function invite(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'role' => 'required|in:user,staff,admin',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
         try {
-            // Generate invite code
-            $inviteCode = strtoupper(substr(md5(uniqid()), 0, 8));
+            DB::beginTransaction();
+
+            $inviteCode = Str::random(32);
 
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
-                'password' => null,
+                'password' => Hash::make(Str::random(32)), // Temporary password for invited users
                 'invite_code' => $inviteCode,
+                'language_preference' => 'id',
                 'is_approved' => false,
             ]);
 
-            // Skip role assignment for now to ensure user creation works
-            // $user->assignRole($request->role);
+            // Assign role
+            $user->assignRole($request->role);
 
-            // Prepare Gmail URL with pre-filled content
             $inviteUrl = url('/register?invite=' . $inviteCode);
-            $subject = 'Undangan Bergabung - Sistem Informasi Pertanahan';
+
+            // Prepare email content
+            $subject = 'Undangan Bergabung - Sistem Informasi Pertanahan Nasional';
             $body = "Halo {$user->name},\n\n" .
                    "Anda telah diundang untuk bergabung dengan Sistem Informasi Pertanahan Nasional.\n\n" .
                    "Silakan klik link berikut untuk mendaftar:\n" .
                    "{$inviteUrl}\n\n" .
                    "Kode Undangan: {$inviteCode}\n\n" .
                    "Salam,\n" .
-                   "Tim Sistem Informasi Pertanahan Nasional";
+                   "CEO Moch Rizky Gunawan\n" .
+                   "Sistem Informasi Pertanahan Nasional";
 
+            // URL encode for Gmail compose
             $gmailUrl = "https://mail.google.com/mail/?view=cm&fs=1&to=" . urlencode($user->email) .
                        "&su=" . urlencode($subject) .
                        "&body=" . urlencode($body);
 
+            DB::commit();
+
             return response()->json([
-                'message' => 'User berhasil dibuat! Gmail akan terbuka untuk mengirim undangan.',
-                'user' => $user,
-                'invite_code' => $inviteCode,
-                'gmail_url' => $gmailUrl
+                'message' => 'Undangan berhasil dikirim!',
+                'gmail_url' => $gmailUrl,
+                'user' => $user
             ]);
+
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Gagal membuat user: ' . $e->getMessage()], 500);
-        }
-    }
-
-    public function approve($id)
-    {
-        try {
-            $user = User::findOrFail($id);
-            $user->update(['is_approved' => true]);
-
-            // Send approval email
-            Mail::to($user->email)->send(new AccountApprovedMail($user));
-
-            return response()->json(['message' => 'User approved successfully']);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to approve user'], 500);
+            DB::rollBack();
+            return response()->json(['message' => 'Gagal membuat user: ' . $e->getMessage()], 500);
         }
     }
 
@@ -254,7 +207,8 @@ class UserManagementController extends Controller
                    "{$inviteUrl}\n\n" .
                    "Kode Undangan: {$inviteCode}\n\n" .
                    "Salam,\n" .
-                   "Tim Sistem Informasi Pertanahan Nasional";
+                   "CEO Moch Rizky Gunawan\n" .
+                   "Sistem Informasi Pertanahan Nasional";
 
             // URL encode for Gmail compose
             $gmailUrl = "https://mail.google.com/mail/?view=cm&fs=1&to=" . urlencode($user->email) .
@@ -264,6 +218,66 @@ class UserManagementController extends Controller
             return redirect($gmailUrl);
         } catch (\Exception $e) {
             return redirect('/')->with('error', 'Kode undangan tidak valid');
+        }
+    }
+
+    public function showRegisterForm(Request $request)
+    {
+        $inviteCode = $request->query('invite');
+
+        if (!$inviteCode) {
+            return redirect('/')->with('error', 'Kode undangan diperlukan');
+        }
+
+        try {
+            $user = User::where('invite_code', $inviteCode)->firstOrFail();
+
+            if ($user->password) {
+                return redirect('/login')->with('info', 'Akun sudah terdaftar. Silakan login.');
+            }
+
+            return view('register', compact('user', 'inviteCode'));
+        } catch (\Exception $e) {
+            return redirect('/')->with('error', 'Kode undangan tidak valid');
+        }
+    }
+
+    public function register(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'invite_code' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+            'pin' => 'required|string|size:6|regex:/^\d{6}$/',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validation failed: ' . $validator->errors()->first()], 422);
+        }
+
+        try {
+            $user = User::where('invite_code', $request->invite_code)->firstOrFail();
+
+            if ($user->password) {
+                return response()->json(['message' => 'Akun sudah terdaftar'], 400);
+            }
+
+            // Here you could verify the PIN if needed, but for now we'll skip it
+            // In a real app, you'd store the PIN and verify it
+
+            DB::beginTransaction();
+
+            $user->update([
+                'password' => Hash::make($request->password),
+                'email_verified_at' => now(),
+                'is_approved' => true,
+            ]);
+
+            DB::commit();
+
+            return response()->json(['message' => 'Registrasi berhasil!']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Gagal mendaftar: ' . $e->getMessage()], 500);
         }
     }
 }

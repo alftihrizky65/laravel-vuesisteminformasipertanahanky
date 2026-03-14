@@ -4,325 +4,590 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GeoAI Chatbot - Sistem Informasi Pertanahan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
     <style>
-        :root {
-            --primary: #10b981;
-            --primary-dark: #059669;
-            --background: #f0f9f4;
-            --text: #333;
-            --light: #fff;
-            --shadow: rgba(0, 0, 0, 0.1);
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            color: var(--text);
-            overflow: hidden;
-        }
-        
-        .container {
-            width: 100%;
-            height: 100vh;
-            background: var(--light);
-            box-shadow: 0 20px 60px var(--shadow);
-            overflow: hidden;
+        /* Loading Screen Styles */
+        .loading-screen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
         }
-        
-        .header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            box-shadow: 0 4px 6px var(--shadow);
+
+        .loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loading-logo {
+            width: 120px;
+            height: 120px;
+            border-radius: 20px;
+            border: 4px solid rgba(255,255,255,0.3);
+            box-shadow: 0 0 40px rgba(99,102,241,0.6);
+            animation: pulseGlow 2s infinite ease-in-out;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            background: white;
+            padding: 10px;
+            object-fit: contain;
+        }
+
+        .loading-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 15px;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 40px rgba(99,102,241,0.6); transform: scale(1); }
+            50% { box-shadow: 0 0 80px rgba(99,102,241,0.9); transform: scale(1.08); }
+        }
+
+        .loading-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #fff, #a5b4fc, #fff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            animation: fadeInUp 1s ease forwards 0.5s;
+        }
+
+        @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .loading-developer {
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            color: rgba(255,255,255,0.6);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0;
+            animation: fadeIn 1s ease forwards 1s;
+        }
+
+        .loading-developer span {
+            color: #a5b4fc;
+            font-weight: 600;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #a5b4fc;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-top: 2rem;
+            opacity: 0;
+            animation: fadeIn 1s ease forwards 1.2s, spin 1s linear infinite 1.2s;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-dots {
+            display: flex;
+            gap: 8px;
+            margin-top: 1.5rem;
+            opacity: 0;
+            animation: fadeIn 1s ease forwards 1.4s;
+        }
+
+        .loading-dots span {
+            width: 10px;
+            height: 10px;
+            background: #a5b4fc;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .loading-dots span:nth-child(1) { animation-delay: 0s; }
+        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Main Content - Hidden initially */
+        .main-content {
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        .main-content.visible {
+            opacity: 1;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-glow: rgba(99, 102, 241, 0.35);
+            --secondary: #8b5cf6;
+            --bg-start: #1e1b4b;
+            --bg-end: #312e81;
+            --card-bg: rgba(30, 27, 75, 0.38);
+            --card-border: rgba(165, 180, 252, 0.20);
+            --text: #f1f5f9;
+            --text-muted: #cbd5e1;
+            --shadow: 0 12px 40px rgba(0,0,0,0.45);
+            --glow: 0 0 28px rgba(99,102,241,0.5);
+            --transition: all 0.45s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+            min-height: 100vh;
+            color: var(--text);
+            overflow: hidden; /* Prevent body scroll */
+            background-attachment: fixed;
             position: relative;
         }
-        
-        .back-button {
+
+        body::before {
+            content: '';
             position: absolute;
-            left: 30px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid white;
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            text-decoration: none;
+            inset: 0;
+            background: radial-gradient(circle at 20% 30%, rgba(99,102,241,0.08) 0%, transparent 40%),
+                        radial-gradient(circle at 80% 70%, rgba(139,92,246,0.06) 0%, transparent 50%);
+            pointer-events: none;
+            animation: floatBg 25s infinite alternate ease-in-out;
+            z-index: -2;
+        }
+
+        @keyframes floatBg {
+            0% { transform: translate(0, 0) scale(1); opacity: 0.7; }
+            100% { transform: translate(8%, -5%) scale(1.08); opacity: 0.9; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: calc(100vw - 20px);
+            margin: 10px auto;
+            height: calc(100vh - 20px);
             display: flex;
-            align-items: center;
-            gap: 8px;
+            flex-direction: column;
+            border-radius: 20px;
+            overflow: hidden;
+            backdrop-filter: blur(22px) saturate(180%);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            box-shadow: var(--shadow);
+            animation: containerPop 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
-        
-        .back-button:hover {
-            background: white;
-            color: var(--primary);
-            transform: translateY(-50%) translateX(-5px);
-            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
+
+        @keyframes containerPop {
+            0% { opacity: 0; transform: scale(0.94) translateY(60px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
         }
-        
-        .header h1 {
-            font-size: 32px;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-        }
-        
-        .logo {
-            width: 60px;
-            height: 60px;
-            object-fit: contain;
-            background: white;
-            border-radius: 12px;
-            padding: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-        
-        .header p {
-            font-size: 16px;
-            opacity: 0.9;
-        }
-        
-        .chat-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 30px 40px;
-            background: #fafafa;
-        }
-        
-        .message {
-            margin-bottom: 20px;
-            display: flex;
-            gap: 12px;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .message.user {
-            flex-direction: row-reverse;
-        }
-        
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
+
+        .header {
+            background: linear-gradient(135deg, rgba(99,102,241,0.92) 0%, rgba(79,70,229,0.88) 100%);
+            padding: 1.5rem 2rem;
+            position: relative;
+            border-bottom: 1px solid rgba(165,180,252,0.25);
+            backdrop-filter: blur(12px);
             flex-shrink: 0;
         }
-        
-        .avatar.bot {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-        }
-        
-        .avatar.user {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        
-        .message-content {
-            max-width: 65%;
-            padding: 18px 22px;
-            border-radius: 18px;
-            line-height: 1.7;
-            font-size: 15px;
-        }
-        
-        .message.bot .message-content {
-            background: white;
-            color: var(--text);
-            box-shadow: 0 2px 8px var(--shadow);
-        }
-        
-        .message.user .message-content {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-        }
-        
-        .quick-questions {
-            padding: 20px 30px;
-            background: white;
-            border-top: 1px solid #e5e7eb;
-        }
-        
-        .quick-questions-title {
-            font-size: 14px;
-            color: #6b7280;
-            margin-bottom: 12px;
-            font-weight: 600;
-        }
-        
-        .questions-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 10px;
-        }
-        
-        .question-btn {
-            background: #f3f4f6;
-            border: 1px solid #e5e7eb;
-            padding: 12px 18px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 14px;
-            text-align: left;
-            color: var(--text);
-        }
-        
-        .question-btn:hover {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        }
-        
-        .input-container {
-            padding: 25px 30px;
-            background: white;
-            border-top: 1px solid #e5e7eb;
+
+        .back-button {
+            position: absolute;
+            right: 1.5rem;
+            top: 1.5rem;
             display: flex;
-            gap: 12px;
-        }
-        
-        .input-container input {
-            flex: 1;
-            padding: 14px 20px;
-            border: 2px solid #e5e7eb;
-            border-radius: 25px;
-            font-size: 15px;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-        
-        .input-container input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-        }
-        
-        .input-container button {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            align-items: center;
+            gap: 0.5rem;
             color: white;
-            border: none;
-            padding: 14px 30px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.6rem 1.2rem;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.22);
+            transition: var(--transition);
+            font-size: 0.9rem;
         }
-        
-        .input-container button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+
+        .back-button:hover {
+            background: rgba(255,255,255,0.28);
+            transform: translateX(6px) scale(1.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
         }
-        
+
+        .back-text {
+            display: inline;
+        }
+
+        .back-icon {
+            font-size: 1rem;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            background: white;
+            padding: 3px;
+            border-radius: 8px;
+            box-shadow: var(--glow);
+            animation: logoPulse 5s infinite alternate ease-in-out;
+        }
+
+        @keyframes logoPulse {
+            from { box-shadow: 0 0 25px rgba(99,102,241,0.5); transform: scale(1); }
+            to   { box-shadow: 0 0 55px rgba(99,102,241,0.8); transform: scale(1.06); }
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+            background: linear-gradient(90deg, #fff, #c7d2fe, #a5b4fc, #fff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 4px 16px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header p {
+            font-size: 1rem;
+            opacity: 0.94;
+            letter-spacing: 0.5px;
+        }
+
+        .chat-container {
+            flex: 1 1 0;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 2.5rem 2.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            scroll-behavior: smooth;
+        }
+
+        .chat-container::-webkit-scrollbar {
+            width: 9px;
+        }
+
+        .chat-container::-webkit-scrollbar-track {
+            background: rgba(30,27,75,0.5);
+        }
+
+        .chat-container::-webkit-scrollbar-thumb {
+            background: linear-gradient(var(--primary), var(--secondary));
+            border-radius: 5px;
+            border: 2px solid rgba(30,27,75,0.5);
+        }
+
+        .message {
+            display: flex;
+            opacity: 0;
+            transform: translateY(45px) scale(0.92);
+            animation: bubbleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+            animation-delay: 0.15s;
+        }
+
+        @keyframes bubbleIn {
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            flex-shrink: 0;
+            box-shadow: var(--glow);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            transition: var(--transition);
+        }
+
+        .avatar.user {
+            background: linear-gradient(135deg, var(--secondary), #7c3aed);
+            margin-left: 1.2rem;
+            margin-right: 0;
+        }
+
+        .avatar:hover { transform: scale(1.12) rotate(8deg); }
+
+        .message-content {
+            max-width: 75%;
+            padding: 1.3rem 1.6rem;
+            border-radius: 1.8rem;
+            font-size: 1.05rem;
+            line-height: 1.65;
+            position: relative;
+            word-wrap: break-word;
+            backdrop-filter: blur(8px) saturate(160%);
+            transition: var(--transition);
+        }
+
+        .message.bot .message-content {
+            background: rgba(30, 27, 75, 0.65);
+            border: 1px solid rgba(165,180,252,0.22);
+            border-bottom-left-radius: 8px;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.3);
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, var(--secondary) 0%, #7c3aed 100%);
+            color: white;
+            border-bottom-right-radius: 8px;
+            box-shadow: 0 8px 28px rgba(139,92,246,0.4);
+        }
+
+        .message-content:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+        }
+
+        .message.bot .message-content::before {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 20px;
+            width: 0; height: 0;
+            border: 10px solid transparent;
+            border-top-color: rgba(30, 27, 75, 0.65);
+            border-right-color: rgba(30, 27, 75, 0.65);
+        }
+
         .typing-indicator {
             display: flex;
-            gap: 4px;
-            padding: 10px;
+            gap: 7px;
+            padding: 1.2rem 1.5rem;
+            background: rgba(30,27,75,0.65);
+            border-radius: 1.8rem;
+            width: fit-content;
+            border: 1px solid rgba(165,180,252,0.22);
         }
-        
+
         .typing-indicator span {
-            width: 8px;
-            height: 8px;
+            width: 11px;
+            height: 11px;
             border-radius: 50%;
             background: var(--primary);
-            animation: typing 1.4s infinite;
+            animation: bounceTyping 1.4s infinite cubic-bezier(0.645, 0.045, 0.355, 1);
         }
-        
-        .typing-indicator span:nth-child(2) {
-            animation-delay: 0.2s;
+
+        .typing-indicator span:nth-child(2) { animation-delay: 0.25s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.5s; }
+
+        @keyframes bounceTyping {
+            0%, 80%, 100% { transform: translateY(0) scale(0.8); opacity: 0.5; }
+            40% { transform: translateY(-14px) scale(1); opacity: 1; }
         }
-        
-        .typing-indicator span:nth-child(3) {
-            animation-delay: 0.4s;
+
+        .quick-questions {
+            padding: 1.5rem 2rem;
+            background: rgba(30,27,75,0.75);
+            border-top: 1px solid rgba(165,180,252,0.18);
+            flex-shrink: 0;
+            max-height: 180px;
+            overflow-y: auto;
         }
-        
-        @keyframes typing {
-            0%, 60%, 100% {
-                transform: translateY(0);
-                opacity: 0.7;
-            }
-            30% {
-                transform: translateY(-10px);
-                opacity: 1;
-            }
+
+        .quick-questions-title {
+            font-size: 1.45rem;
+            font-weight: 700;
+            margin-bottom: 1.4rem;
+            text-align: center;
+            background: linear-gradient(90deg, #c7d2fe, #e0e7ff, #c7d2fe);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
-        
+
+        .questions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.2rem;
+        }
+
+        .question-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(165,180,252,0.25);
+            color: #e0e7ff;
+            padding: 1.2rem 1.6rem;
+            border-radius: 1.2rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            text-align: center;
+            backdrop-filter: blur(12px);
+        }
+
+        .question-btn:hover {
+            background: linear-gradient(135deg, rgba(99,102,241,0.75), rgba(139,92,246,0.75));
+            color: white;
+            transform: translateY(-6px) scale(1.04);
+            box-shadow: 0 16px 40px rgba(99,102,241,0.45);
+            border-color: transparent;
+        }
+
+        .input-container {
+            padding: 1.8rem 2.8rem;
+            background: rgba(30,27,75,0.85);
+            border-top: 1px solid rgba(165,180,252,0.18);
+            display: flex;
+            gap: 1.2rem;
+            align-items: center;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        #userInput {
+            flex: 1;
+            padding: 1.3rem 1.8rem;
+            border: 2px solid rgba(165,180,252,0.4);
+            border-radius: 999px;
+            font-size: 1.08rem;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            outline: none;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+            min-width: 0;
+        }
+
+        #userInput::placeholder {
+            color: rgba(255,255,255,0.6);
+        }
+
+        #userInput:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 5px var(--primary-glow), 0 8px 28px rgba(99,102,241,0.3);
+            background: rgba(255,255,255,0.2);
+        }
+
+        .input-container button {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 1.3rem 2.6rem;
+            border-radius: 999px;
+            font-size: 1.08rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 8px 28px rgba(99,102,241,0.45);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .input-container button:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 45px rgba(99,102,241,0.65);
+        }
+
+        .input-container button:active {
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 1100px) {
+            .container { max-width: 96vw; margin: 0.5rem auto; border-radius: 16px; }
+        }
+
         @media (max-width: 768px) {
-            .back-button {
-                left: 15px;
-                padding: 8px 15px;
-                font-size: 12px;
+            .container { margin: 0; border-radius: 0; height: 100vh; }
+            .header { padding: 1.5rem; }
+            .header h1 { font-size: 1.8rem; }
+            .logo { width: 50px; height: 50px; }
+            .back-button { 
+                right: 0.5rem; 
+                top: 0.5rem; 
+                left: auto; 
+                padding: 0.5rem; 
+                font-size: 0.9rem; 
+                background: rgba(255,255,255,0.2);
             }
-            
-            .header h1 {
-                font-size: 24px;
+            .back-text { display: none; }
+            .back-icon { font-size: 1.2rem; }
+            .chat-container { padding: 1rem 1rem; }
+            .message-content { padding: 1rem 1.2rem; font-size: 0.95rem; max-width: 85%; }
+            .avatar { width: 40px; height: 40px; font-size: 1.2rem; }
+            .quick-questions { padding: 1rem 1rem; }
+            .questions-grid { gap: 0.6rem; }
+            .question-btn { padding: 0.8rem 1rem; font-size: 0.85rem; }
+            .input-container { 
+                flex-direction: row; 
+                gap: 0.8rem; 
+                padding: 1rem; 
+                position: sticky;
+                bottom: 0;
+                background: rgba(30,27,75,0.95);
             }
-            
-            .logo {
-                width: 45px;
-                height: 45px;
-            }
-            
-            .chat-container {
-                padding: 20px 15px;
-            }
-            
-            .message-content {
-                max-width: 80%;
-            }
-            
-            .questions-grid {
-                grid-template-columns: 1fr;
-            }
+            #userInput { padding: 0.8rem 1rem; font-size: 0.95rem; }
+            .input-container button { padding: 0.8rem 1.5rem; font-size: 0.95rem; }
         }
     </style>
 </head>
 <body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-logo">
+            <img src="{{ asset('sbadmin/img/Logo_BPN-KemenATR_(2017).png') }}" alt="Logo">
+        </div>
+        <div class="loading-text">GeoAI</div>
+        <div class="loading-developer">Developed by <span>mrizkeygnawantftdot18</span></div>
+        <div class="loading-spinner"></div>
+        <div class="loading-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
     <div class="container">
         <div class="header">
             <a href="/" class="back-button">
-                <span>←</span>
-                <span>Kembali</span>
+                <span class="back-icon">←</span><span class="back-text">Kembali</span>
             </a>
             <h1>
-                <img src="https://files.catbox.moe/b4k9ze.jpg" alt="Logo" class="logo">
+                <img src="{{ asset('sbadmin/img/Logo_BPN-KemenATR_(2017).png') }}" alt="Logo" class="logo">
                 GeoAI Assistant
             </h1>
             <p>Asisten Virtual Sistem Informasi Pertanahan</p>
@@ -339,7 +604,7 @@
         </div>
         
         <div class="quick-questions">
-            <div class="quick-questions-title">💡 Pertanyaan Populer:</div>
+            <div class="quick-questions-title">💡 Pertanyaan Populer</div>
             <div class="questions-grid">
                 <button class="question-btn" onclick="askQuestion(this.textContent)">Cara mengurus sertifikat tanah</button>
                 <button class="question-btn" onclick="askQuestion(this.textContent)">Syarat balik nama tanah</button>
@@ -347,6 +612,14 @@
                 <button class="question-btn" onclick="askQuestion(this.textContent)">Cara cek sertifikat tanah</button>
                 <button class="question-btn" onclick="askQuestion(this.textContent)">Perbedaan SHM dan SHGB</button>
                 <button class="question-btn" onclick="askQuestion(this.textContent)">Cara perpanjang HGB</button>
+                <button class="question-btn" onclick="askQuestion(this.textContent)">Jenis sertifikat tanah</button>
+                <button class="question-btn" onclick="askQuestion(this.textContent)">Apa itu PPAT</button>
+                <button class="question-btn" onclick="askQuestion(this.textContent)">Apa itu NJOP</button>
+                <button class="question-btn" onclick="askQuestion(this.textContent)">Apa itu BPHTB</button>
+                <button class="question-btn" onclick="askQuestion(this.textContent)">Dokumen apa saja untuk pengurusan tanah</button>
+                <button class="question-btn" onclick="askQuestion(this.textContent)">Masalah umum pertanahan</button>
+                <button class="question-btn" onclick="askQuestion(this.textContent)">Tips membeli tanah aman</button>
+                <button class="question-btn" onclick="askQuestion(this.textContent)">Pengertian tanah menurut hukum</button>
             </div>
         </div>
         
@@ -355,10 +628,21 @@
             <button onclick="sendMessage()">Kirim</button>
         </div>
     </div>
+    </div>
 
     <script>
+        // Loading Screen Animation
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                var loadingScreen = document.getElementById('loadingScreen');
+                var mainContent = document.getElementById('mainContent');
+                
+                loadingScreen.classList.add('hidden');
+                mainContent.classList.add('visible');
+            }, 1500); // 1.5 seconds loading time - faster than before
+        });
+
         const knowledgeBase = {
-            // Greetings & Casual Conversation
             "halo": {
                 answer: `Halo! 👋 Selamat datang di GeoAI Assistant!
 
@@ -515,23 +799,23 @@ Ada yang ingin ditanyakan? 😊`
             
             // About Creator & GeoAI
             "siapa pembuatmu": {
-                answer: `Saya dibuat dan dikembangkan oleh **kytftdot**! 👨‍💻
+                answer: `Saya dibuat dan dikembangkan oleh **rizkeygnawantftdot18**! 👨‍💻
 
-kytftdot adalah developer yang passionate dalam menciptakan solusi teknologi untuk mempermudah pengelolaan sistem informasi pertanahan. Dengan keahlian dalam AI, web development, dan sistem informasi geografis, ia menciptakan GeoAI Assistant sebagai asisten virtual yang dapat membantu masyarakat memahami prosedur pertanahan dengan lebih mudah.
+rizkeygnawantftdot18 adalah developer yang passionate dalam menciptakan solusi teknologi untuk mempermudah pengelolaan sistem informasi pertanahan. Dengan keahlian dalam AI, web development, dan sistem informasi geografis, ia menciptakan GeoAI Assistant sebagai asisten virtual yang dapat membantu masyarakat memahami prosedur pertanahan dengan lebih mudah.
 
-Terima kasih kepada kytftdot yang telah memberikan saya "kehidupan" untuk melayani Anda! 🙏✨`
+Terima kasih kepada rizkeygnawantftdot18 yang telah memberikan saya "kehidupan" untuk melayani Anda! 🙏✨`
             },
             "who made you": {
-                answer: `I was created and developed by **kytftdot**! 👨‍💻
+                answer: `I was created and developed by **rizkeygnawantftdot18**! 👨‍💻
 
-kytftdot is a passionate developer who specializes in creating technological solutions for land information systems. With expertise in AI, web development, and geographic information systems, he created GeoAI Assistant as a virtual assistant to help people understand land procedures more easily.
+rizkeygnawantftdot18 is a passionate developer who specializes in creating technological solutions for land information systems. With expertise in AI, web development, and geographic information systems, he created GeoAI Assistant as a virtual assistant to help people understand land procedures more easily.
 
-Big thanks to kytftdot for bringing me to life to serve you! 🙏✨`
+Big thanks to rizkeygnawantftdot18 for bringing me to life to serve you! 🙏✨`
             },
             "siapa kamu": {
                 answer: `Hai! Saya **GeoAI Assistant** 🤖
 
-Saya adalah asisten virtual berbasis AI yang diciptakan oleh **kytftdot** untuk membantu Anda memahami Sistem Informasi Pertanahan dengan lebih mudah.
+Saya adalah asisten virtual berbasis AI yang diciptakan oleh **rizkeygnawantftdot18** untuk membantu Anda memahami Sistem Informasi Pertanahan dengan lebih mudah.
 
 **Kemampuan Saya:**
 ✅ Menjawab pertanyaan seputar pertanahan
@@ -562,12 +846,12 @@ Informasi akurat dari sumber resmi
 ⚡ **24/7 Available**
 Siap membantu kapan saja Anda butuhkan
 
-Dibuat dengan ❤️ oleh kytftdot untuk mempermudah hidup Anda!
+Dibuat dengan ❤️ oleh rizkeygnawantftdot18 untuk mempermudah hidup Anda!
 
 Ada pertanyaan tentang pertanahan? Tanya saja! 😊`
             },
-            "kytftdot": {
-                answer: `**kytftdot** adalah developer berbakat di balik GeoAI Assistant! 🌟
+            "rizkeygnawantftdot18": {
+                answer: `**rizkeygnawantftdot18** adalah developer berbakat di balik GeoAI Assistant! 🌟
 
 **Profil Singkat:**
 👨‍💻 Full-stack Developer
@@ -580,9 +864,9 @@ Ada pertanyaan tentang pertanahan? Tanya saja! 😊`
 - Mengembangkan Sistem Informasi Pertanahan
 - Memudahkan akses informasi pertanahan untuk masyarakat
 
-kytftdot percaya bahwa teknologi harus mempermudah hidup, bukan memperumit! 
+rizkeygnawantftdot18 percaya bahwa teknologi harus mempermudah hidup, bukan memperumit! 
 
-Terima kasih kytftdot atas karya luar biasa ini! 🙏✨`
+Terima kasih rizkeygnawantftdot18 atas karya luar biasa ini! 🙏✨`
             },
             
             // Help & Support
@@ -601,6 +885,12 @@ Terima kasih kytftdot atas karya luar biasa ini! 🙏✨`
 ⚖️ Persyaratan dokumen
 🔄 Balik nama dan perpanjangan
 ✅ Cara cek keaslian sertifikat
+🗺️ Pemetaan dan GIS pertanahan
+📈 Statistik data tanah
+📝 Manajemen dokumen digital
+👥 Profil pengguna dan notifikasi
+🛡️ Masalah keamanan dan sengketa tanah
+💡 Tips membeli/jual tanah aman
 
 **Tips Bertanya:**
 ✅ Gunakan bahasa yang jelas
@@ -611,6 +901,17 @@ Terima kasih kytftdot atas karya luar biasa ini! 🙏✨`
 - "Bagaimana cara mengurus sertifikat tanah?"
 - "Berapa biaya balik nama tanah?"
 - "Apa perbedaan SHM dan SHGB?"
+- "Cara cek keaslian sertifikat tanah online?"
+- "Syarat perpanjang HGB?"
+- "Jenis-jenis hak atas tanah?"
+- "Apa itu PPAT dan tugasnya?"
+- "Pengertian NJOP dan cara hitung?"
+- "Apa itu BPHTB dan contoh perhitungan?"
+- "Dokumen apa saja untuk waris tanah?"
+- "Masalah sertifikat ganda gimana solusinya?"
+- "Tips aman beli tanah dari makelar?"
+- "Pengertian tanah menurut UUPA?"
+- "Cara pakai peta GIS di sistem ini?"
 
 Butuh bantuan apa lagi? 😊`
             },
@@ -631,6 +932,8 @@ Mari saya bantu dengan cara yang lebih mudah:
 - "Bagaimana cara pakai web ini?"
 - "Apa saja fitur yang tersedia?"
 - "Siapa pembuatmu?"
+- "Apa itu PPAT?"
+- "Cara hitung BPHTB?"
 
 Saya akan berusaha menjelaskan dengan lebih baik! 💪`
             },
@@ -651,7 +954,7 @@ Happy to help! If you have more questions about land information or how to use t
 Have a great day! ✨`
             },
             
-            // Land Information - Complete Guide
+            // Land Information - Complete Guide with more entries
             "cara mengurus sertifikat tanah": {
                 answer: `**Cara Mengurus Sertifikat Tanah:**
 
@@ -827,7 +1130,7 @@ SHM lebih kuat dan permanen, cocok untuk hunian jangka panjang. SHGB terbatas wa
 - Pastikan tanah masih digunakan sesuai peruntukannya`
             },
             "jenis sertifikat tanah": {
-                answer: `**Jenis-Jenis Sertifikat Tanah di Indonesia:**
+                answer: `**Jenis-Jenis Sertifikat Tanah di Indonesia :**
 
 1. **Hak Milik (HM/SHM)** 🏠
    - Hak terkuat dan terpenuh
@@ -861,7 +1164,7 @@ SHM lebih kuat dan permanen, cocok untuk hunian jangka panjang. SHGB terbatas wa
 **Masing-masing punya karakteristik dan ketentuan berbeda!**`
             },
             "apa itu ppat": {
-                answer: `**PPAT (Pejabat Pembuat Akta Tanah)**
+                answer: `**PPAT (Pejabat Pembuat Akta Tanah) **
 
 PPAT adalah pejabat umum yang diberi kewenangan untuk membuat akta-akta otentik mengenai perbuatan hukum tertentu atas tanah dan/atau bangunan.
 
@@ -888,7 +1191,7 @@ Biasanya 1% dari nilai transaksi (bisa dinegosiasi)
 ⚠️ **Penting:** Pastikan menggunakan PPAT resmi yang terdaftar di BPN!`
             },
             "apa itu njop": {
-                answer: `**NJOP (Nilai Jual Objek Pajak)**
+                answer: `**NJOP (Nilai Jual Objek Pajak) **
 
 NJOP adalah harga rata-rata yang diperoleh dari transaksi jual beli tanah dan bangunan. Jika tidak ada transaksi, ditentukan melalui perbandingan harga dengan objek lain yang sejenis.
 
@@ -918,7 +1221,7 @@ NJOP adalah harga rata-rata yang diperoleh dari transaksi jual beli tanah dan ba
 **NJOP berbeda dengan harga pasar, biasanya lebih rendah!**`
             },
             "apa itu bphtb": {
-                answer: `**BPHTB (Bea Perolehan Hak atas Tanah dan Bangunan)**
+                answer: `**BPHTB (Bea Perolehan Hak atas Tanah dan Bangunan) **
 
 BPHTB adalah pajak yang dikenakan atas perolehan hak atas tanah dan/atau bangunan.
 
@@ -955,7 +1258,7 @@ NJOPTKP: Rp 80.000.000
 BPHTB = 5% x (500jt - 80jt) = Rp 21.000.000`
             },
             "dokumen apa saja": {
-                answer: `**Dokumen Penting Dalam Pengurusan Tanah:**
+                answer: `**Dokumen Penting Dalam Pengurusan Tanah :**
 
 📄 **1. Dokumen Kepemilikan:**
 - Sertifikat tanah (SHM/SHGB/HGB/HP)
@@ -997,7 +1300,7 @@ BPHTB = 5% x (500jt - 80jt) = Rp 21.000.000`
 **Selalu siapkan dokumen asli + fotokopi!**`
             },
             "masalah tanah": {
-                answer: `**Masalah-Masalah Umum Pertanahan & Solusinya:**
+                answer: `**Masalah-Masalah Umum Pertanahan & Solusinya :**
 
 ⚠️ **1. Sertifikat Ganda**
 Masalah: 2 sertifikat untuk 1 bidang tanah
@@ -1030,7 +1333,7 @@ Solusi: Lunasi tunggakan + denda, cek di kantor pajak
 **Tips:** Konsultasikan ke ahli hukum pertanahan atau BPN setempat untuk kasus spesifik!`
             },
             "tips membeli tanah": {
-                answer: `**Tips Aman Membeli Tanah:**
+                answer: `**Tips Aman Membeli Tanah :**
 
 ✅ **1. Cek Status Hukum**
 - Pastikan sertifikat asli (cek ke BPN)
@@ -1075,7 +1378,7 @@ Solusi: Lunasi tunggakan + denda, cek di kantor pajak
 🔒 **Gunakan escrow account atau rekening bersama untuk pembayaran bertahap!**`
             },
             "pengertian tanah": {
-                answer: `**Pengertian Tanah Menurut Hukum Indonesia:**
+                answer: `**Pengertian Tanah Menurut Hukum Indonesia :**
 
 📚 **Definisi:**
 Menurut UU No. 5 Tahun 1960 (UUPA), tanah adalah permukaan bumi yang dapat dimiliki dengan hak-hak tertentu.
@@ -1109,7 +1412,365 @@ Menurut UU No. 5 Tahun 1960 (UUPA), tanah adalah permukaan bumi yang dapat dimil
 - Hak Memungut Hasil Hutan
 
 **Semua tanah di Indonesia pada dasarnya dikuasai oleh negara untuk kemakmuran rakyat!**`
-            }
+            },
+            "apa itu hgu": {
+                answer: `**HGU (Hak Guna Usaha) **
+
+HGU adalah hak atas tanah negara untuk usaha pertanian, perkebunan, atau peternakan.
+
+🕒 Masa Berlaku: 35 tahun + perpanjangan 25 tahun
+
+⚠️ Syarat: Luas minimal 5 hektar, untuk WNI/badan hukum
+
+**Proses Pengurusan:**
+- Ajukan ke BPN
+- Dokumen: KTP, NPWP, rencana usaha, dll
+- Biaya: Tergantung luas & NJOP
+
+Penting untuk bisnis agribisnis!`
+            },
+            "cara urus imb": {
+                answer: `**Cara Mengurus IMB (Izin Mendirikan Bangunan) :**
+
+📋 **Dokumen:**
+- KTP & NPWP
+- Sertifikat tanah
+- Gambar denah bangunan
+- Bukti bayar retribusi
+
+🔄 **Proses:**
+1. Ajukan ke Dinas Tata Kota
+2. Verifikasi dokumen
+3. Bayar retribusi
+4. Tunggu terbit (1-3 bulan)
+
+💰 Biaya: Bervariasi berdasarkan luas bangunan
+
+Tanpa IMB, bangunan bisa dibongkar!`
+            },
+            "apa itu pbb": {
+                answer: `**PBB (Pajak Bumi dan Bangunan) **
+
+PBB adalah pajak atas tanah dan bangunan yang dikelola oleh pemerintah daerah.
+
+💰 **Tarif:** 0.1% - 0.5% x NJOP
+
+**Cara Bayar:**
+- Dapat SPPT dari kelurahan
+- Bayar di bank/kantor pos/online
+
+**Waktu Bayar:** Setiap tahun sebelum jatuh tempo (September)
+
+**Sanksi:** Denda 2% per bulan jika telat
+
+Selalu lunasi ya!`
+            },
+            "cara hitung bphtb": {
+                answer: `**Cara Hitung BPHTB :**
+
+BPHTB = 5% x (NJOP - NJOPTKP)
+
+- NJOP: Nilai Jual Objek Pajak
+- NJOPTKP: Nilai Tidak Kena Pajak (berbeda per daerah, misal Rp 60jt untuk rumah tinggal)
+
+**Contoh:**
+NJOP: Rp 500jt
+NJOPTKP: Rp 80jt
+BPHTB = 5% x (500jt - 80jt) = Rp 21jt
+
+Bayar sebelum balik nama!`
+            },
+            "sengketa tanah gimana": {
+                answer: `**Cara Atasi Sengketa Tanah :**
+
+1. **Mediasi:** Bahas dengan pihak terkait, saksi dari RT/RW/kelurahan
+
+2. **Lapor BPN:** Ajukan pengecekan data yuridis
+
+3. **Gugatan Pengadilan:** Jika ga selesai, bawa ke pengadilan negeri
+
+**Tips:** Kumpulkan bukti (sertifikat, saksi, foto)
+
+Gunakan pengacara pertanahan kalau rumit!`
+            },
+            "cara bagi waris tanah": {
+                answer: `**Cara Bagi Waris Tanah :**
+
+1. **Tentukan Ahli Waris:** Berdasarkan hukum waris (Islam/Adat/BW)
+
+2. **Dokumen:** Sertifikat tanah, surat kematian, akta kelahiran ahli waris
+
+3. **Buat Akta Waris:** Di notaris/PPAT
+
+4. **Balik Nama:** Ajukan ke BPN dengan akta waris
+
+Waktu: 1-3 bulan, biaya tergantung luas
+
+Hindari sengketa dengan musyawarah!`
+            },
+            "tanah negara bisa dibeli ga": {
+                answer: `**Tanah Negara Bisa Dibeli ?**
+
+Tidak langsung dibeli, tapi bisa dikuasai dengan hak seperti HGB/HP/HGU.
+
+**Cara:**
+- Ajukan izin pemanfaatan tanah negara ke BPN
+- Syarat: Rencana penggunaan, KTP, dll
+- Biaya: Uang pemasukan berdasarkan NJOP
+
+Bukan hak milik, tapi bisa diperpanjang. Konsultasi BPN!`
+            },
+            "apa itu rtrw": {
+                answer: `**RTRW (Rencana Tata Ruang Wilayah) **
+
+RTRW adalah rencana penggunaan lahan di suatu daerah untuk 20 tahun ke depan.
+
+**Fungsi:**
+- Tentukan peruntukan tanah (hunian, pertanian, industri)
+- Hindari penggunaan tanah sembarangan
+- Dasar penerbitan IMB
+
+Cek di Dinas Tata Kota daerahmu sebelum beli tanah!`
+            },
+            "cara cek rtrw": {
+                answer: `**Cara Cek RTRW :**
+
+1. **Online:** Akses website Dinas Tata Kota/Pemda (misal jakarta.go.id untuk Jakarta)
+
+2. **Datang Langsung:** Ke kantor Dinas Tata Kota kabupaten/kota
+
+3. **Dokumen:** Minta peta RTRW atau surat keterangan peruntukan tanah
+
+Penting untuk pastikan tanahmu sesuai peruntukan!`
+            },
+            "biaya perpanjang shgb": {
+                answer: `**Biaya Perpanjang SHGB :**
+
+Biaya: 2-3% dari NJOP tanah (Nilai Jual Objek Pajak)
+
+**Contoh:**
+NJOP Rp 1 Miliar
+Biaya ≈ Rp 20-30 Juta
+
+Bayar di Kantor Pertanahan saat ajukan perpanjangan (minimal 2 tahun sebelum habis).`
+            },
+            "apa itu hmsrs": {
+                answer: `**HMSRS (Hak Milik Atas Satuan Rumah Susun) **
+
+HMSRS adalah sertifikat kepemilikan apartemen/kondominium.
+
+**Karacteristik:**
+- Berlaku selamanya seperti SHM
+- Termasuk hak atas tanah bersama & fasum
+- Bisa dijual, diwariskan, digadaikan
+
+Wajib bayar service charge bulanan!`
+            },
+            "cara urus hmsrs": {
+                answer: `**Cara Urus HMSRS :**
+
+1. **Dokumen:** Sertifikat induk, AJB dari developer, KTP, NPWP
+
+2. **Ajukan ke BPN:** Serahkan dokumen, bayar biaya
+
+3. **Verifikasi:** Pengukuran unit & bagian bersama
+
+4. **Terbit:** Dapat sertifikat HMSRS
+
+Waktu: 1-2 bulan, biaya tergantung luas unit.`
+            },
+            "apa itu girik": {
+                answer: `**Girik **
+
+Girik adalah bukti penguasaan tanah lama (pra-sertifikat) dari desa/kelurahan.
+
+**Fungsi:**
+- Bukti sementara sebelum sertifikat
+- Dasar untuk urus sertifikat tanah
+
+**Catatan:** Bukan hak milik, mudah disengketakan. Segera konversi ke sertifikat SHM!`
+            },
+            "cara konversi girik ke shm": {
+                answer: `**Cara Konversi Girik ke SHM :**
+
+1. **Dokumen:** Girik asli, KTP, SPPT PBB 5 tahun, surat riwayat tanah
+
+2. **Ajukan ke BPN:** Isi form, bayar biaya pendaftaran
+
+3. **Pengukuran:** Petugas ukur tanah
+
+4. **Pengumuman & Terbit:** Tunggu 3-6 bulan
+
+Biaya: Rp 650rb - 1.8jt tergantung luas.`
+            },
+            "apa itu letter c": {
+                answer: `**Letter C **
+
+Letter C adalah buku catatan tanah di desa (mirip girik), bukti penguasaan tanah zaman kolonial.
+
+**Fungsi:**
+- Bukti sementara kepemilikan
+- Dasar urus sertifikat
+
+**Catatan:** Bukan sertifikat resmi, segera konversi ke SHM untuk keamanan!`
+            },
+            "cara urus tanah warisan": {
+                answer: `**Cara Urus Tanah Warisan :**
+
+1. **Buat Surat Keterangan Waris:** Dari kelurahan/notaris, daftar ahli waris
+
+2. **Dokumen:** Sertifikat tanah, surat kematian pewaris, KTP ahli waris
+
+3. **Balik Nama:** Ajukan ke BPN dengan akta pembagian waris
+
+4. **Bayar BPHTB:** Jika ada peralihan hak
+
+Waktu: 1-3 bulan, hindari sengketa dengan musyawarah!`
+            },
+            "biaya balik nama waris": {
+                answer: `**Biaya Balik Nama Tanah Waris :**
+
+- Biaya administrasi BPN: Rp 50rb - 100rb
+- BPHTB: 5% x (NJOP - NJOPTKP) jika melebihi batas waris bebas pajak
+- Biaya notaris: Rp 500rb - 2jt tergantung kompleksitas
+
+Untuk waris keluarga inti biasanya bebas BPHTB sampai batas tertentu. Cek ke BPN!`
+            },
+            "apa itu hak pakai": {
+                answer: `**Hak Pakai (HP) **
+
+HP adalah hak menggunakan tanah negara untuk jangka waktu tertentu.
+
+🕒 Masa Berlaku: 25 tahun + perpanjangan 20 tahun
+
+**Syarat:** Untuk perorangan/badan hukum, tidak bisa dijual bebas
+
+**Contoh:** Tanah untuk sekolah, rumah ibadah
+
+Bukan hak milik, kembali ke negara setelah masa berakhir.`
+            },
+            "apa itu hak pengelolaan": {
+                answer: `**Hak Pengelolaan (HPL) **
+
+HPL adalah hak mengelola tanah negara oleh badan hukum pemerintah (BUMN, Pemda).
+
+**Fungsi:**
+- Kelola & berikan hak lain (HGB/HP) atas tanah negara
+
+**Contoh:** PT KAI kelola tanah rel kereta
+
+Tidak untuk perorangan, masa berlaku tak terbatas.`
+            },
+            "cara urus pemecahan sertifikat": {
+                answer: `**Cara Urus Pemecahan Sertifikat Tanah :**
+
+1. **Dokumen:** Sertifikat asli, KTP, SPPT PBB, gambar pemecahan
+
+2. **Ajukan ke BPN:** Isi form pemecahan bidang tanah
+
+3. **Pengukuran:** Petugas ukur ulang batas
+
+4. **Terbit Sertifikat Baru:** Untuk setiap bidang hasil pemecahan
+
+Waktu: 1-2 bulan, biaya Rp 200rb - 500rb per bidang.`
+            },
+            "cara gabung sertifikat tanah": {
+                answer: `**Cara Gabung Sertifikat Tanah :**
+
+1. **Dokumen:** Sertifikat-sertifikat asli, KTP, SPPT PBB, gambar penggabungan
+
+2. **Ajukan ke BPN:** Isi form penggabungan bidang tanah
+
+3. **Verifikasi:** Cek batas & riwayat
+
+4. **Terbit Sertifikat Baru:** Satu sertifikat untuk tanah gabungan
+
+Waktu: 1-3 bulan, biaya Rp 300rb - 600rb.`
+            },
+            "apa itu tanah adat": {
+                answer: `**Tanah Adat **
+
+Tanah adat adalah tanah yang dikuasai masyarakat adat berdasarkan hukum adat setempat.
+
+**Status:** Diakui negara (UUPA Pasal 3), tapi harus didaftarkan ke BPN
+
+**Contoh:** Tanah ulayat di Minangkabau atau Bali
+
+**Catatan:** Bisa dikonversi ke hak individu, tapi hormati norma adat!`
+            },
+            "cara urus tanah adat": {
+                answer: `**Cara Urus Tanah Adat :**
+
+1. **Dapatkan Surat Keterangan:** Dari pemimpin adat & kelurahan
+
+2. **Dokumen:** Bukti penguasaan adat, KTP, saksi
+
+3. **Ajukan Sertifikat:** Ke BPN sebagai tanah hak milik/adat
+
+4. **Verifikasi:** BPN periksa dengan masyarakat adat
+
+Waktu: 3-6 bulan, biaya mirip sertifikat baru.`
+            },
+            "apa itu sengketa batas tanah": {
+                answer: `**Sengketa Batas Tanah **
+
+Sengketa batas adalah perselisihan antar pemilik tanah tentang garis batas bidang tanah.
+
+**Penyebab:** Pengukuran salah, dokumen lama kabur, atau konflik waris
+
+**Solusi:**
+- Mediasi kelurahan
+- Pengukuran ulang BPN
+- Gugat pengadilan kalau ga selesai
+
+Cegah dengan patok batas jelas & dokumen lengkap!`
+            },
+            "cara cegah sengketa tanah": {
+                answer: `**Cara Cegah Sengketa Tanah :**
+
+1. **Dokumen Lengkap:** Sertifikat asli, update balik nama
+
+2. **Patok Batas Jelas:** Pasang patok & tanda batas permanen
+
+3. **Cek Riwayat:** Sebelum beli, verifikasi ke BPN & tetangga
+
+4. **Transaksi Legal:** Selalu pakai PPAT & bayar pajak
+
+5. **Asuransi Tanah:** Pertimbangkan asuransi properti
+
+Aman itu lebih baik dari obat!`
+            },
+            "apa itu lelang tanah": {
+                answer: `**Lelang Tanah **
+
+Lelang tanah adalah penjualan tanah melalui proses lelang resmi, biasanya karena sita hutang atau tanah negara.
+
+**Proses:**
+1. Pengumuman lelang
+2. Daftar & bayar jaminan
+3. Ikut lelang (tawar tertinggi menang)
+4. Bayar & balik nama
+
+**Sumber:** KPKNL atau lelang swasta
+
+Hati-hati cek status tanah sebelum ikut!`
+            },
+            "tips ikut lelang tanah": {
+                answer: `**Tips Ikut Lelang Tanah :**
+
+1. **Cek Dokumen:** Pastikan tanah bebas sengketa, cek NJOP
+
+2. **Survey Lokasi:** Kunjungi tanah, cek kondisi & akses
+
+3. **Hitung Biaya Total:** Harga lelang + pajak + biaya lain
+
+4. **Siapkan Dana:** Bayar jaminan & siap bayar penuh jika menang
+
+5. **Ikuti Aturan:** Daftar tepat waktu, jangan emosi saat tawaran
+
+Sabar & teliti kunci sukses!`
+            },
+            // ... (Tambah entry baru seperti ini kalau mau lebih banyak lagi, misal "apa itu imb", "cara urus ppjb", dll)
         };
 
         function addMessage(text, isUser = false) {
@@ -1125,8 +1786,14 @@ Menurut UU No. 5 Tahun 1960 (UUPA), tanah adalah permukaan bumi yang dapat dimil
             content.className = 'message-content';
             content.innerHTML = text.replace(/\n/g, '<br>');
             
-            messageDiv.appendChild(avatar);
-            messageDiv.appendChild(content);
+            if (isUser) {
+                messageDiv.appendChild(content);
+                messageDiv.appendChild(avatar);
+            } else {
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(content);
+            }
+            
             chatContainer.appendChild(messageDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
@@ -1196,7 +1863,7 @@ Menurut UU No. 5 Tahun 1960 (UUPA), tanah adalah permukaan bumi yang dapat dimil
                 normalizedQuestion.includes('menciptakan')) {
                 return knowledgeBase["siapa pembuatmu"];
             }
-            if (normalizedQuestion.includes('kytftdot')) return knowledgeBase["kytftdot"];
+            if (normalizedQuestion.includes('rizkeygnawantftdot18')) return knowledgeBase["rizkeygnawantftdot18"];
             if ((normalizedQuestion.includes('siapa') || normalizedQuestion.includes('who')) && normalizedQuestion.includes('kamu')) {
                 return knowledgeBase["siapa kamu"];
             }
@@ -1264,25 +1931,25 @@ Menurut UU No. 5 Tahun 1960 (UUPA), tanah adalah permukaan bumi yang dapat dimil
                 if (answer) {
                     addMessage(answer.answer);
                 } else {
-                    addMessage(`Maaf, saya belum memiliki informasi spesifik tentang "${question}". 😅
+                    addMessage(`Maaf , saya ga bisa jawab spesifik tentang "${question}" karena saya hanya AI Agent untuk pertanyaan seputar sistem informasi pertanahan. 😅
 
-Berikut beberapa hal yang bisa saya bantu:
-• Cara mengurus sertifikat tanah
-• Syarat balik nama tanah  
-• Biaya pengurusan sertifikat
-• Cara cek keaslian sertifikat
-• Perbedaan SHM dan SHGB
-• Cara perpanjang HGB
-• Tips membeli tanah
-• Dokumen yang diperlukan
-• Jenis-jenis sertifikat
-• PPAT, NJOP, BPHTB
-• Masalah pertanahan umum
+Ini bantuan pertanyaan yang lengkap banget buat kamu coba:
+- "Cara mengurus sertifikat tanah" (panduan lengkap urus sertifikat)
+- "Syarat balik nama tanah" (dokumen & proses balik nama)
+- "Biaya pengurusan sertifikat" (rincian biaya sertifikat & balik nama)
+- "Cara cek sertifikat tanah" (cek keaslian online/offline)
+- "Perbedaan SHM dan SHGB" (perbedaan hak milik & guna bangunan)
+- "Cara perpanjang HGB" (langkah perpanjang hak guna bangunan)
+- "Jenis sertifikat tanah" (daftar jenis seperti SHM, HGB, HGU, dll)
+- "Apa itu PPAT" (penjelasan Pejabat Pembuat Akta Tanah)
+- "Apa itu NJOP" (nilai jual objek pajak & cara cek)
+- "Apa itu BPHTB" (bea perolehan hak atas tanah & contoh hitung)
+- "Dokumen apa saja" (daftar dokumen pengurusan tanah)
+- "Masalah tanah" (masalah umum & solusi seperti sengketa)
+- "Tips membeli tanah" (tips aman beli tanah tanpa kena tipu)
+- "Pengertian tanah" (definisi tanah menurut UUPA)
 
-Atau coba tanyakan:
-- "Siapa pembuatmu?"
-- "Cara pakai web ini"
-- "Fitur apa saja"
+Contoh: Ketik "cara mengurus sertifikat tanah" buat panduan lengkap!
 
 Saya selalu belajar untuk melayani Anda lebih baik! 💚`);
                 }

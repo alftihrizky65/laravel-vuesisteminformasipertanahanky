@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Auth\Passwords\CanResetPassword;
 
 // ← Tambahan Spatie (hanya 2 baris ini)
 use Spatie\Permission\Traits\HasRoles;
@@ -30,6 +31,9 @@ class User extends Authenticatable
         'language_preference',     // ← sudah ada dari kamu
         'profile_photo_path',      // ← BARU: untuk simpan path foto
         'is_approved',            // ← (opsional) kalau pakai approval
+        'invite_code',            // ← untuk invite system
+        'registration_reason',    // ← untuk alasan registrasi
+        'login_count',            // ← BARU: untuk tracking jumlah login
     ];
 
     /**
@@ -52,7 +56,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
-            'is_approved'      => 'boolean',           // ← tambahan
+            'is_approved'       => 'boolean',           // 9 tambahan
+            'login_count'       => 'integer',
         ];
     }
 

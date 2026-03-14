@@ -103,9 +103,7 @@
 
         async function loadUsers() {
             try {
-                const res = await fetch(`${API_URL}/api/users`, {
-                    headers: { 'Accept': 'application/json' }
-                });
+                const res = await fetch(`/users/list`);
                 if (!res.ok) throw new Error('Gagal koneksi');
                 const users = await res.json();
 
